@@ -64,6 +64,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queries.TermsQuery;
 import org.apache.lucene.search.*;
 import org.apache.lucene.spatial.geopoint.document.GeoPointField;
+import org.apache.lucene.spatial.geopoint.search.XGeoPointDistanceRangeQuery;
 import org.apache.lucene.spatial.prefix.PrefixTreeStrategy;
 import org.apache.lucene.spatial.query.SpatialArgs;
 import org.apache.lucene.spatial.query.SpatialOperation;
@@ -89,6 +90,7 @@ import org.elasticsearch.index.mapper.*;
 import org.elasticsearch.index.query.RegexpFlag;
 import org.elasticsearch.index.search.geo.GeoDistanceRangeQuery;
 import org.elasticsearch.index.search.geo.GeoPolygonQuery;
+import org.elasticsearch.index.search.geo.LegacyInMemoryGeoBoundingBoxQuery;
 import org.locationtech.spatial4j.context.jts.JtsSpatialContext;
 import org.locationtech.spatial4j.shape.Rectangle;
 import org.locationtech.spatial4j.shape.Shape;
@@ -958,7 +960,7 @@ public class LuceneQueryBuilder {
 */
             private Query getBoundingBoxQuery(Shape shape, IndexGeoPointFieldData fieldData) {
                 Rectangle boundingBox = shape.getBoundingBox();
-                return new InMemoryGeoBoundingBoxQuery(
+                return new LegacyInMemoryGeoBoundingBoxQuery(
                     new GeoPoint(boundingBox.getMaxY(), boundingBox.getMinX()),
                     new GeoPoint(boundingBox.getMinY(), boundingBox.getMaxX()),
                     fieldData
@@ -1002,7 +1004,7 @@ public class LuceneQueryBuilder {
                 Double distance = DataTypes.DOUBLE.value(functionLiteralPair.input().value());
 
                 String fieldName = distanceRefLiteral.reference().ident().columnIdent().fqn();
-                GeoPointFieldMapper.GeoPointFieldType geoPointFieldType = getGeoPointFieldType(fieldName, context.mapperService);
+                BaseGeoPointFieldMapper.LegacyGeoPointFieldType geoPointFieldType = getGeoPointFieldType(fieldName, context.mapperService);
                 IndexGeoPointFieldData fieldData = context.fieldDataService.getForField(geoPointFieldType);
 
                 Input geoPointInput = distanceRefLiteral.input();
@@ -1067,9 +1069,9 @@ public class LuceneQueryBuilder {
                         from = 0d;
                     }
                     if (to == null) {
-                        to = GeoDistanceUtils.maxRadialDistanceMeters(geoPoint.lon(), geoPoint.lat());
+                        to = GeoUtils.maxRadialDistanceMeters(geoPoint.lon(), geoPoint.lat());
                     }
-                    query = new GeoPointDistanceRangeQuery(
+                    query = new XGeoPointDistanceRangeQuery(
                         fieldData.index().getName(),
                         GeoPointField.TermEncoding.PREFIX,
                         geoPoint.lon(), geoPoint.lat(),
@@ -1080,15 +1082,15 @@ public class LuceneQueryBuilder {
             }
         }
 
-        private static GeoPointFieldMapper.GeoPointFieldType getGeoPointFieldType(String fieldName, MapperService mapperService) {
-            MappedFieldType fieldType = mapperService.smartNameFieldType(fieldName);
+        private static BaseGeoPointFieldMapper.LegacyGeoPointFieldType getGeoPointFieldType(String fieldName, MapperService mapperService) {
+            MappedFieldType fieldType = mapperService.fullName(fieldName);
             if (fieldType == null) {
                 throw new IllegalArgumentException(String.format(Locale.ENGLISH, "column \"%s\" doesn't exist", fieldName));
             }
             if (!(fieldType instanceof GeoPointFieldMapper.GeoPointFieldType)) {
                 throw new IllegalArgumentException(String.format(Locale.ENGLISH, "column \"%s\" isn't of type geo_point", fieldName));
             }
-            return (GeoPointFieldMapper.GeoPointFieldType) fieldType;
+            return (BaseGeoPointFieldMapper.LegacyGeoPointFieldType) fieldType;
         }
 
         private static final EqQuery eqQuery = new EqQuery();
