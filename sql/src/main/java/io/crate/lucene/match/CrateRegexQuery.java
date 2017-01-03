@@ -29,6 +29,7 @@ import org.apache.lucene.search.MultiTermQuery;
 import org.apache.lucene.util.AttributeSource;
 
 import java.io.IOException;
+import java.util.Objects;
 
 
 /**
@@ -61,5 +62,20 @@ public class CrateRegexQuery extends MultiTermQuery {
         }
         buffer.append(term.text());
         return buffer.toString();
+    }
+
+    // hasCode() and equals() are required because Lucene caches the queries
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CrateRegexQuery that = (CrateRegexQuery) o;
+        return Objects.equals(term, that.term);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), term);
     }
 }
