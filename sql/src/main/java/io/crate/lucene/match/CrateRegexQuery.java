@@ -33,6 +33,8 @@ import java.io.IOException;
 
 /**
  * Implements the regular expression term search query.
+ * This query is used when the pattern is of PCRE format (includes escape sequences and/or embedded flags)
+ * and replaces Lucene's deprecated RegexQuery.
  */
 public class CrateRegexQuery extends MultiTermQuery {
 
