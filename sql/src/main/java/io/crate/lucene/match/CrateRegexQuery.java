@@ -32,9 +32,10 @@ import java.io.IOException;
 
 
 /**
- * Implements the regular expression term search query.
- * This query is used when the pattern is of PCRE format (includes escape sequences and/or embedded flags)
- * and replaces Lucene's deprecated RegexQuery.
+ * Implements the regular expression term search query for patterns
+ * of PCRE format (which include escape sequences and/or embedded flags).
+ * It was formerly implemented by Lucene's deprecated RegexQuery and the
+ * functionality is no longer available in newer Lucene versions.
  */
 public class CrateRegexQuery extends MultiTermQuery {
 
